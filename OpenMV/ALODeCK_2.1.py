@@ -37,6 +37,8 @@ kernel = [-2, -1,  0, \
 while(True):
     usb = pyb.USB_VCP() # This is a serial port object that allows you to
     # communciate with your computer. While it is not open the code below runs.
+    led = pyb.LED(1) # Switch to using the red LED.
+    led.on()
     while(not usb.isconnected()):
         led.on()
         time.sleep(150)
