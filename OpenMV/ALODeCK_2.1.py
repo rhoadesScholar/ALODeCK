@@ -4,14 +4,14 @@
 import sensor, image, time, math, pyb, array, gc, micropython
 # Color Tracking Thresholds (L Min, L Max, A Min, A Max, B Min, B Max)
 # The below thresholds track in general red/green things. You may wish to tune them...
-thresholds = [(30, 100, 0, 127, -128, 127), # generic_red_thresholds -> index is 0 so code == (1 << 0)
-              (30, 100, -128, -5, -128, 127), # generic_green_thresholds -> index is 1 so code == (1 << 1)
-              (16, 40, 0, 96, -128, -44), # generic_blue_thresholds -> index is 2 so code == (1 << 2)
+thresholds = [(20, 100, 0, 127, 0, 127), # generic_red_thresholds -> index is 0 so code == (1 << 0)
+              (20, 100, -128, -5, -128, 127), # generic_green_thresholds -> index is 1 so code == (1 << 1)
+              (20, 100, 0, 127, -128, -10), # generic_blue_thresholds -> index is 2 so code == (1 << 2)
               (20, 100, -54, -1, 7, 53)] # generic_IR_thresholds -> index is 3 so code == (1 << 3)
 radius = 40
 windowX = 240
 windowY = 240
-buttColor = 2
+buttColor = 4
 headColor = 1
 fps = 120
 
@@ -19,21 +19,20 @@ fps = 120
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
-sensor.set_windowing((windowX, windowY)) # 240x240 center pixels of VGA
-sensor.set_auto_gain(False) # must be turned off for color tracking
-sensor.set_auto_whitebal(False)#, rgb_gain_db = (0.0, 0.0, 0.0)) # must be turned off for color tracking
+sensor.set_windowing((240, 240)) # 240x240 center pixels of VGA
+sensor.set_auto_gain(False, gain_db = 17.78586) # must be turned off for color tracking
+sensor.set_auto_whitebal(False, rgb_gain_db = (-6.0, -3.0, 2.0)) # must be turned off for color tracking
 sensor.set_brightness(-3)
 sensor.set_saturation(3)
 #sensor.set_auto_exposure(False, 1000)
-#sensor.set_contrast(-1)
+#sensor.set_contrast(-3)
 sensor.skip_frames(time = 2000)
 clock = time.clock()
-led = pyb.LED(1) # Red LED = 1, Green LED = 2, Blue LED = 3, IR LEDs = 4.
 
 kernel_size = 1 # 3x3==1, 5x5==2, 7x7==3, etc.
 kernel = [-2, -1,  0, \
-          -1,  1,  1, \
-           0,  1,  2]
+          -1,  6,  -1, \
+           0,  -1,  -2]
 
 while(True):
     usb = pyb.USB_VCP() # This is a serial port object that allows you to
@@ -67,21 +66,26 @@ while(True):
 
     #FIND MAX AMPLITUDE OF DISPLACEMENT
 
+    led1 = pyb.LED(1) # Red LED = 1, Green LED = 2, Blue LED = 3, IR LEDs = 4.
+    led2 = pyb.LED(3)
+    led1.on()
+    led2.on()
+
     maxAmp = []
     variance = [1000.0, 1000.0]
     while(sum(variance) > 80 or len(maxAmp) < 10):
-        img = sensor.snapshot()#.histeq(adaptive=True, clip_limit=1)
+        img = sensor.snapshot().histeq(adaptive=True, clip_limit=3)
         #img.morph(kernel_size, kernel) # Run the kernel on every pixel of the image.
         usb.write(str('Finding max amp...'))
         maxButt = 0
         maxHead = 0
         for blob in img.find_blobs(thresholds, pixels_threshold=4, area_threshold=4):
             if blob.code() == buttColor and blob.compactness() > maxButt: #butt
-                maxButt = blob.compactness()#*blob.pixels()
+                maxButt = blob.solidity()*blob.pixels()
                 butt = blob
                 img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
             if blob.code() == headColor and blob.compactness() > maxHead: #head
-                maxHead = blob.compactness()#*blob.pixels()
+                maxHead = blob.solidity()*blob.pixels()
                 head = blob
                 img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
@@ -130,19 +134,18 @@ while(True):
         # img.draw_circle(ring.x(), ring.y(), ring.r(), color = (255, 0, 0))
         # img.draw_cross(ring.x(), ring.y(), color = (255, 0, 0))
         gc.collect()
-        img = sensor.snapshot()#.histeq(adaptive=True, clip_limit=3)
-
+        img = sensor.snapshot().histeq(adaptive=True, clip_limit=3)
         #img.morph(kernel_size, kernel) # Run the kernel on every pixel of the image.
 
         maxButt = 0
         maxHead = 0
-        for blob in img.find_blobs(thresholds, pixels_threshold=4, area_threshold=4):
+        for blob in img.find_blobs(thresholds, pixels_threshold=4, area_threshold=6, merge=True, margin=1, x_stride=3, y_stride=3):
             if blob.code() == buttColor and blob.compactness() > maxButt: #butt
-                maxButt = blob.compactness()#*blob.pixels()
+                maxButt = blob.solidity()*blob.pixels()
                 butt = blob
                 #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
             if blob.code() == headColor and blob.compactness() > maxHead: #head
-                maxHead = blob.compactness()#*blob.pixels()
+                maxHead = blob.solidity()*blob.pixels()
                 head = blob
                 #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
