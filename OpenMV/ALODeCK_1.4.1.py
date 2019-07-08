@@ -5,8 +5,8 @@ import sensor, image, time, math, pyb, array
 # Color Tracking Thresholds (L Min, L Max, A Min, A Max, B Min, B Max)
 # The below thresholds track in general red/green things. You may wish to tune them...
 thresholds = [(32, 71, 49, 127, -128, 127), # generic_red_thresholds -> index is 0 so code == (1 << 0)
-              (24, 86, -128, -18, 28, 127), # generic_green_thresholds -> index is 1 so code == (1 << 1)
-              (0, 100, -128, 127, -128, -44)] # generic_blue_thresholds -> index is 2 so code == (1 << 2)
+              (45, 80, -128, -11, 42, 127), # generic_green_thresholds -> index is 1 so code == (1 << 1)
+              (0, 28, -35, 18, -128, 12)] # generic_blue_thresholds -> index is 2 so code == (1 << 2)
 # You may pass up to 16 thresholds above. However, it's not really possible to segment any
 # scene with 16 thresholds before color thresholds start to overlap heavily.
 
@@ -54,8 +54,8 @@ while(True):
         # Shrinking the number of tested circle radiuses yields a big performance boost.
 
         for c in img.find_circles(threshold = 6000, x_margin = 50, y_margin = 50, r_margin = 50,
-            r_min = 50, r_max = 500, r_step = 2):
-            img.draw_circle(c.x(), c.y(), c.r(), color = (255, 0, 0), thickness = 3)
+            r_min = 50, r_max = 300, r_step = 2):
+            img.draw_circle(c.x(), c.y(), c.r(), color = (255, 255, 255), thickness = 3)
             #print(c)
             circles.append([c.x(), c.y(), c.r()])
 
@@ -79,18 +79,19 @@ while(True):
         clock.tick()
         img.draw_circle(ring.x(), ring.y(), ring.r(), color = (255, 0, 0))
         img.draw_cross(ring.x(), ring.y(), color = (255, 0, 0))
-        img = sensor.snapshot()
+        img = sensor.snapshot().histeq(adaptive=True, clip_limit=3)
         maxButt = 0
         maxHead = 0
         out = array.array('d', [0, 0])
-        for blob in img.find_blobs(thresholds, pixels_threshold=50, area_threshold=80):
-            if blob.code() == 1 and blob.compactness() > maxButt: #butt
+        for blob in img.find_blobs(thresholds, pixels_threshold=5, area_threshold=5):
+            if blob.code() == 4 and blob.compactness() > maxButt: #butt
                 maxButt = blob.compactness()*blob.pixels()
                 butt = blob
+                img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
             if blob.code() == 2 and blob.compactness() > maxHead: #head
                 maxHead = blob.compactness()*blob.pixels()
                 head = blob
-            img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
+                img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
         if maxButt*maxHead > 0:
             img.draw_string(butt.x() + 2, butt.y() + 2, "butt")

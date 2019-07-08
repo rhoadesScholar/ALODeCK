@@ -2,7 +2,7 @@ function err = virmenEngine(exper)
 % Virmen engine
 
 %EDITED 2019 by JEFFREY RHOADES, HARVARD UNIVERSITY, TO ADD MULTI-MONITOR
-%SUPPORT
+%SUPPORT and ALODeCK1 COMPATABILITY
 
 % *************************************************************************
 % Copyright 2013, Princeton University.  All rights reserved.
@@ -116,11 +116,11 @@ end
 try
     vr.controller = serial(vr.exper.variables.comPort);
     fopen(vr.controller);
-    vr.controller.ReadAsyncMode = 'manual';
-    readasync(vr.controller)
+    vr.controller.ReadAsyncMode = 'continuous';
+%     readasync(vr.controller)
     out = fgetl(vr.controller);
     while ~contains(out, 'array')
-        out = fgetl(vr.controller);
+        out = fgetl(vr.controller)
     end
 catch
     disp('No controller found.');
