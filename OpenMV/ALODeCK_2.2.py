@@ -6,7 +6,7 @@ import sensor, image, time, math, pyb, array, gc, micropython
 # The below thresholds track in general red/green things. You may wish to tune them...
 thresholds = [(20, 100, 0, 127, 0, 127), # generic_red_thresholds -> index is 0 so code == (1 << 0)
               (20, 100, -128, -5, -128, 127), # generic_green_thresholds -> index is 1 so code == (1 << 1)
-              (15, 100, 15, 127, -128, -30), # generic_blue_thresholds -> index is 2 so code == (1 << 2)
+              (10, 100, 20, 127, -128, -40), # generic_blue_thresholds -> index is 2 so code == (1 << 2)
               (20, 100, -54, -1, 7, 53)] # generic_IR_thresholds -> index is 3 so code == (1 << 3)
 radius = 40
 windowX = 240
