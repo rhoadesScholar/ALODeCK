@@ -33,7 +33,12 @@ virmenIsBad = true;
 while virmenIsBad
     virmenVars = fieldnames(virmenExper.variables);
     for virmenNdx = 1:length(virmenVars)
-        eval([virmenVars{virmenNdx} '=eval(''' virmenExper.variables.(virmenVars{virmenNdx}) ''');']);
+%         eval([virmenVars{virmenNdx} '=eval(''' virmenExper.variables.(virmenVars{virmenNdx}) ''');']);
+        try
+            eval(sprintf('%s = %s;', virmenVars{virmenNdx}, virmenExper.variables.(virmenVars{virmenNdx})));
+        catch
+            eval(sprintf('%s = ''%s'';', virmenVars{virmenNdx}, virmenExper.variables.(virmenVars{virmenNdx})));
+        end
     end
     
     try
