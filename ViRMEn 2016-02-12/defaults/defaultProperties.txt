@@ -15,7 +15,7 @@ worldTransparency	0
 showWireframe	0
 startLocation	[0 0 0 0]
 tiling	[5 5]
-edgeRadius	NaN
+edgeRadius	1
 triangulationRefining	[1 1]
 triangulationGrid	[1 1]
 showTriangulation	1
