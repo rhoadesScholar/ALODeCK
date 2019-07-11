@@ -8,7 +8,7 @@ thresholds = [(20, 100, 0, 127, 0, 127), # generic_red_thresholds -> index is 0 
               (10, 100, 20, 127, -128, -40)] # generic_blue_thresholds -> index is 1 so code == (1 << 1)
               #(20, 100, -128, -5, -128, 127), # generic_green_thresholds -> index is 2 so code == (1 << 2)
               #(20, 100, -54, -1, 7, 53)] # generic_IR_thresholds -> index is 3 so code == (1 << 3)
-radius = 40
+radius = 5
 windowX = 240
 windowY = 240
 buttColor = 2
