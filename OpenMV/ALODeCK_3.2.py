@@ -14,7 +14,7 @@ windowY = 240
 buttColor = 2
 headColor = 1
 fps = 120
-calThresh = (50, 100, -128, 127, -128, 127)
+calThresh = [(50, 100, -128, 127, -128, 127)]
 
 
 #SETUP
