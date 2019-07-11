@@ -1,4 +1,4 @@
-function velocity = moveALODeCK2D_1(vr)
+function velocity = moveALODeCKHeading_1(vr)
     leadingText = 'array(''d'', ';
     velocity = [0 0 0 0];
     invertX = 1;%SET TO 1 to uninvert
