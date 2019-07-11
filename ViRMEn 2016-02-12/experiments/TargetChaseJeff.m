@@ -206,7 +206,7 @@ if isReward || vr.iterations == 1
 end
 
 % Beep in case the target was hit
-if vr.debugMode
+if ~vr.debugMode
     if isReward
         sound(vr.rewardSound,vr.rewardFs);
     end
