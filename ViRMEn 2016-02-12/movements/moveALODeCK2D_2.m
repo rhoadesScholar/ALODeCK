@@ -19,8 +19,8 @@ function [velocity, type, missedBeat] = moveALODeCK2D_2(vr)
     if exist('out', 'var') && ~isempty(out)
         out = str2num(erase(out(strfind(out, leadingText):end-2), leadingText));
     end
-    if ~exist('out', 'var') || isempty(out)
-        out = [0, 0]
+    if ~exist('out', 'var') || isempty(out) || ~isnumeric(out)
+        out = [0, 0];
     end
     try
         cmp = abs(out(5:6).*out(3:4));

@@ -85,7 +85,7 @@ while(True):
     variance = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
     clock.tick()
     if calibrate:
-        while(sum(variance) > 400 or len(maxAmp) < 10) or len(maxAmp) < 10) and (gc.mem_free() > 2) and (clock.avg() < calTimeOut):
+        while(sum(variance) > 400 or len(maxAmp) < 10) and (gc.mem_free() > 2) and (clock.avg() < calTimeOut):
             img = sensor.snapshot().histeq(adaptive=True, clip_limit=2.5)
             #img.morph(kernel_size, kernel) # Run the kernel on every pixel of the image.
             usb.write(str('Finding max amp...'))

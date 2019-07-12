@@ -125,7 +125,7 @@ try
     try
         vr.missedBeatLimit = vr.exper.variables.missedBeatLimit;
     catch
-        vr.missedBeatLimit = 240;
+        vr.missedBeatLimit = 30;
     end
 catch
     disp('No controller found.');
@@ -166,6 +166,7 @@ while ~vr.experimentEnded
                     fwrite(vr.controller, "\\x03\\x04");
                     fclose(vr.controller);
                     delete(vr.controller);
+                    pause(3)
                     vr.controller = serial(vr.exper.variables.comPort);
                     fopen(vr.controller);
                     vr.controller.ReadAsyncMode = 'continuous';
