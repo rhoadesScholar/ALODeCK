@@ -23,8 +23,10 @@ function [velocity, type, missedBeat] = moveALODeCK2D_2(vr)
         out = [0, 0]
     end
     try
-        ind = find(abs(out(5:6)) == min(abs(out(5:6))));
-        out([ind, ind + 2]) = 0;
+        cmp = abs(out(5:6).*out(3:4));
+        ind = (cmp == max(cmp)) & (sign(out(5:6)) == sign(out(3:4)));
+        if ~any(ind), ind = max(out(3:4)) == out(3:4); end
+        out(repmat(~ind, 1, 3)) = 0;
         velocity(1) = out(3)*vr.scaling(1)*invertX;
         velocity(2) = out(4)*vr.scaling(2)*invertY;
     end
