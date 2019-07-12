@@ -163,15 +163,24 @@ while ~vr.experimentEnded
             vr.missedBeats = vr.missedBeats + missedBeat;
             if vr.missedBeats >= vr.missedBeatLimit
                 try
-                    fprintf(vr.controller, "\x03\x04");
+                    fwrite(vr.controller, "\\x03\\x04");
                     fclose(vr.controller);
                     delete(vr.controller);
                     vr.controller = serial(vr.exper.variables.comPort);
                     fopen(vr.controller);
                     vr.controller.ReadAsyncMode = 'continuous';
                     out = fgetl(vr.controller);
-                    while ~contains(out, 'array')
+                    tic
+                    while ~contains(out, 'array') && toc < 3
                         out = fgetl(vr.controller)
+                    end
+                    if isempty(out)
+                        vr.experimentEnded = true;
+                        break
+                    else
+                        while ~contains(out, 'array')
+                            out = fgetl(vr.controller)
+                        end
                     end
                 catch
                     disp('No controller found.');

@@ -15,6 +15,8 @@ buttColor = 2
 headColor = 1
 fps = 120
 calThresh = [(50, 100, -128, 127, -128, 127)]
+calTimeOut = 3000
+calibrate = False
 
 
 #SETUP
@@ -81,38 +83,50 @@ while(True):
 
     maxAmp = []
     variance = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
-    while(sum(variance) > 400 or len(maxAmp) < 10):
-        img = sensor.snapshot().histeq(adaptive=True, clip_limit=2.5)
-        #img.morph(kernel_size, kernel) # Run the kernel on every pixel of the image.
-        usb.write(str('Finding max amp...'))
-        maxCal = 0
-        for blob in img.find_blobs(calThresh, pixels_threshold=6, area_threshold=8):
-            if (blob.area())  > maxCal:
-                maxCal = blob.area()
-                cal = blob
-                img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
+    clock.tick()
+    if calibrate:
+        while(sum(variance) > 400 or len(maxAmp) < 10) or len(maxAmp) < 10) and (gc.mem_free() > 2) and (clock.avg() < calTimeOut):
+            img = sensor.snapshot().histeq(adaptive=True, clip_limit=2.5)
+            #img.morph(kernel_size, kernel) # Run the kernel on every pixel of the image.
+            usb.write(str('Finding max amp...'))
+            maxCal = 0
+            for blob in img.find_blobs(calThresh, pixels_threshold=6, area_threshold=8):
+                if (blob.area())  > maxCal:
+                    maxCal = blob.area()
+                    cal = blob
+                    img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
-        if maxCal > 0:
-            img.draw_string(cal.x() + 2, cal.y() + 2, "calibrator")
+            if maxCal > 0:
+                img.draw_string(cal.x() + 2, cal.y() + 2, "calibrator")
 
-            calV = [cal.cxf() - ring.x(), cal.cyf() - ring.y()]
-            calMag = math.sqrt(sum([math.pow(v, 2) for v in calV]))
-            calMagO = max([calMag - ring.r(), 0])
-            calTheta = math.atan(calV[1]/calV[0])
-            calVO = [math.copysign(calMagO*math.cos(calTheta), calV[0]), math.copysign(calMagO*math.sin(calTheta), calV[1])]
-            img.draw_line(cal.cx(), cal.cy(), cal.cx() - round(calV[0]), cal.cy() - round(calV[1]), color = (50, 50, 0), thickness = 3)
+                calV = [cal.cxf() - ring.x(), cal.cyf() - ring.y()]
+                calMag = math.sqrt(sum([math.pow(v, 2) for v in calV]))
+                calMagO = max([calMag - ring.r(), 0])
+                calTheta = math.atan(calV[1]/calV[0])
+                calVO = [math.copysign(calMagO*math.cos(calTheta), calV[0]), math.copysign(calMagO*math.sin(calTheta), calV[1])]
+                img.draw_line(cal.cx(), cal.cy(), cal.cx() - round(calV[0]), cal.cy() - round(calV[1]), color = (50, 50, 0), thickness = 3)
 
-            #dot = sum([a*b for a,b in zip(headVO, bodyV)])
-            #magP = dot/bodyMag
-            maxAmp.append([calVO[0], calVO[1], calV[0], calV[1], 1, 1])
+                #dot = sum([a*b for a,b in zip(headVO, bodyV)])
+                #magP = dot/bodyMag
+                maxAmp.append([calVO[0], calVO[1], calV[0], calV[1], 1, 1])
 
-            avg = [sum(subl[subj] for subl in maxAmp)/len(maxAmp) for subj in range(0, len(maxAmp[0]))]
-            #print(avg)
+                avg = [sum(subl[subj] for subl in maxAmp)/len(maxAmp) for subj in range(0, len(maxAmp[0]))]
+                #print(avg)
 
-            variance = [sum(math.pow(subl[subj] - avg[subj], 2) for subl in maxAmp)/len(maxAmp) for subj in range(0, len(avg))]
-            #print(variance)
+                variance = [sum(math.pow(subl[subj] - avg[subj], 2) for subl in maxAmp)/len(maxAmp) for subj in range(0, len(avg))]
+                #print(variance)
     #print(maxAmp)
-    maxAmp = [math.fabs(a) for a in avg]
+    if (sum(variance) > 400 or len(maxAmp) < 10):
+        calV = [windowX - ring.x(), windowY - ring.y()]
+        calMag = math.sqrt(sum([math.pow(v, 2) for v in calV]))
+        calMagO = max([calMag - ring.r(), 0])
+        calTheta = math.atan(calV[1]/calV[0])
+        calVO = [math.copysign(calMagO*math.cos(calTheta), calV[0]), math.copysign(calMagO*math.sin(calTheta), calV[1])]
+        maxAmp = [calVO[0], calVO[1], calV[0], calV[1], 1, 1]
+        usb.write(str('Max amp inferred.\n'))
+        gc.collect()
+    else:
+        maxAmp = [math.fabs(a) for a in avg]
     led = pyb.LED(2) # Switch to using the green LED.
     led.on()
     time.sleep(150)
