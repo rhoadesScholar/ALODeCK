@@ -164,34 +164,41 @@ if norm(vr.targetPosition - vr.position(1:2)) < vr.minDistance
     isDeliver = (rand < vr.rewardProbability) || (vr.numRewards < vr.freeRewards);
 end
 
-if norm(vr.position(1:2)) < vr.minTriggerRadius
-    lst = vr.worlds{vr.currentWorld}.objects.triangles(vr.worlds{vr.currentWorld}.objects.indices.targetCylinder,:);
-    vr.worlds{vr.currentWorld}.surface.visible(lst(1):lst(2)) = false;
-end
+% if norm(vr.position(1:2)) < vr.minTriggerRadius
+%     lst = vr.worlds{vr.currentWorld}.objects.triangles(vr.worlds{vr.currentWorld}.objects.indices.targetCylinder,:);
+%     vr.worlds{vr.currentWorld}.surface.visible(lst(1):lst(2)) = false;
+% end
 
 % Update reward text box
 % Find a new position for the cylinder if the target was hit
 if isReward    
     vr.numRewards = vr.numRewards + 1;
     if isDeliver
-        vr.currentWorld = randi(length(vr.worlds));
+        newWorld = randi(length(vr.worlds));
+        while vr.currentWorld == newWorld
+            newWorld = randi(length(vr.worlds));
+        end
+        vr.currentWorld = newWorld;
         vr.numDeliver = vr.numDeliver + 1;
+%         tempInd = [(abs(vr.position(1:2)) > vr.floorWidth/2), false, false];
+%         vr.position(tempInd) = sign(vr.position(tempInd)).*(0.8*vr.floorWidth/2);
+        if any(abs(vr.position(1:2)) > vr.floorWidth/2)
+            vr.position(1:2) = [0, 0];
+        end
     end
     vr.text(1).string = ['R=' num2str(vr.numDeliver) '/' num2str(vr.numRewards)];
     vr.targetPosition = vr.position(1:2);
-    while (norm(vr.targetPosition) < vr.minTriggerRadius && norm(vr.targetPosition - vr.position(1:2)) < vr.minStartDistanceInside) || ...
-        (norm(vr.targetPosition) > vr.minTriggerRadius && norm(vr.targetPosition - vr.position(1:2)) < vr.minStartDistance)
-    
-        p = vr.randomRadiusExponent;
-        vr.targetPosition = (rand(1,2).^p)*vr.floorWidth/2 .* sign(rand(1,2)-0.5);
-        while norm(vr.targetPosition-vr.position(1:2)) > vr.maxStartDistance
-            if vr.currentWorld == 1%FOR ROUND ARENAS
-                theta = 2*pi*rand;
-                R = (rand.^p)*sqrt(2)*vr.floorWidth/2;
-                vr.targetPosition = [R*cos(theta) R*sin(theta)];
-            else
-                vr.targetPosition = (rand(1,2).^p)*vr.floorWidth/2 .* sign(rand(1,2)-0.5);
-            end
+    p = vr.randomRadiusExponent;
+%     while (norm(vr.targetPosition) < vr.minTriggerRadius && norm(vr.targetPosition - vr.position(1:2)) < vr.minStartDistanceInside) || ...
+%         (norm(vr.targetPosition) > vr.minTriggerRadius && norm(vr.targetPosition - vr.position(1:2)) < vr.minStartDistance)
+    while norm(vr.targetPosition - vr.position(1:2)) < vr.minStartDistance ||...
+        norm(vr.targetPosition-vr.position(1:2)) > vr.maxStartDistance
+        if vr.currentWorld == 1%FOR ROUND ARENAS
+            theta = 2*pi*rand;
+            R = (rand.^p)*sqrt(2)*vr.floorWidth/2;
+            vr.targetPosition = [R*cos(theta) R*sin(theta)];
+        else
+            vr.targetPosition = (rand(1,2).^p)*vr.floorWidth/2 .* sign(rand(1,2)-0.5);
         end
     end
 end
