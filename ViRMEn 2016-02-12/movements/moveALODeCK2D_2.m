@@ -11,6 +11,7 @@ function [velocity, type, missedBeat] = moveALODeCK2D_2(vr)
     
     if vr.controller.BytesAvailable > 0
         out = fgetl(vr.controller);
+        missedBeat = 0;
     else
         missedBeat = 1
     end

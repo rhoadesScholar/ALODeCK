@@ -15,6 +15,7 @@ buttColor = 2
 headColor = 1
 fps = 120
 calThresh = [(50, 100, -128, 127, -128, 127)]
+calTimeOut = 10000
 
 
 #SETUP
@@ -69,7 +70,7 @@ while(True):
             maxMag = c.magnitude()
             ring = c
             print(c)
-            usb.write(str('Getting ring...'))
+            usb.write(str('Getting ring...\n'))
     led.off()
 
     #FIND MAX AMPLITUDE OF DISPLACEMENT
@@ -81,10 +82,11 @@ while(True):
 
     maxAmp = []
     variance = [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
-    while(sum(variance) > 400 or len(maxAmp) < 10):
+    clock.tick()
+    while(sum(variance) > 400 or len(maxAmp) < 10) and (gc.mem_free() > 2) and (clock.avg() < calTimeOut):
         img = sensor.snapshot().histeq(adaptive=True, clip_limit=2.5)
         #img.morph(kernel_size, kernel) # Run the kernel on every pixel of the image.
-        usb.write(str('Finding max amp...'))
+        usb.write(str('Finding max amp...\n'))
         maxCal = 0
         for blob in img.find_blobs(calThresh, pixels_threshold=6, area_threshold=8):
             if (blob.area())  > maxCal:
@@ -112,7 +114,17 @@ while(True):
             variance = [sum(math.pow(subl[subj] - avg[subj], 2) for subl in maxAmp)/len(maxAmp) for subj in range(0, len(avg))]
             #print(variance)
     #print(maxAmp)
-    maxAmp = [math.fabs(a) for a in avg]
+    if (sum(variance) > 400 or len(maxAmp) < 10):
+        calV = [windowX - ring.x(), windowY - ring.y()]
+        calMag = math.sqrt(sum([math.pow(v, 2) for v in calV]))
+        calMagO = max([calMag - ring.r(), 0])
+        calTheta = math.atan(calV[1]/calV[0])
+        calVO = [math.copysign(calMagO*math.cos(calTheta), calV[0]), math.copysign(calMagO*math.sin(calTheta), calV[1])]
+        maxAmp = [calVO[0], calVO[1], calV[0], calV[1], 1, 1]
+        usb.write(str('Max amp inferred.\n'))
+        gc.collect()
+    else:
+        maxAmp = [math.fabs(a) for a in avg]
     led = pyb.LED(2) # Switch to using the green LED.
     led.on()
     time.sleep(150)
@@ -172,6 +184,7 @@ while(True):
                 #img.draw_line(ring.x(), ring.y(), ring.x() + round(out[0]), ring.y() + round(out[1]), color = (0, 255, 0), thickness = 3)
                 print(out)
                 usb.send(out, timeout = round(1000/fps))
+                #usb.write(out, timeout = round(1000/fps))
         while clock.avg() < 1000/fps:
             pyb.udelay(500)
         clock.tick( )
