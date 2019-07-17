@@ -182,6 +182,9 @@ while(True):
                     #img.draw_line(ring.x(), ring.y(), ring.x() + round(out[0]), ring.y() + round(out[1]), color = (0, 255, 0), thickness = 3)
                     print(out)
                     usb.send(out, timeout = round(1000/fps))
+                else:
+                    print(blank)
+                    usb.send(blank, timeout = round(1000/fps))
             else:
                 print(blank)
                 usb.send(blank, timeout = round(1000/fps))

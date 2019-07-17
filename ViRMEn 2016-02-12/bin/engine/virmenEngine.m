@@ -179,7 +179,7 @@ while ~vr.experimentEnded
                     if isempty(out)
                         vr.experimentEnded = true;
                         break
-                    else
+                    elseif ~contains(out, 'array')
                         while ~contains(out, 'array')
                             out = fgetl(vr.controller)
                         end
@@ -268,8 +268,7 @@ while ~vr.experimentEnded
     % Update position
     vr.position = vr.position+vr.dp;
     
-    % Translate+rotate coordinates and calculate distances from animal
-    
+    % Translate+rotate coordinates and calculate distances from animal    
     [vertexArray, distance] = virmenProcessCoordinates(vr.worlds{oldWorld}.surface.vertices, vr.position, vr.numPerspectives);
 %     [vertexArray, distance] = virmenProcessCoordinatesOld(vr.worlds{oldWorld}.surface.vertices, vr.position);
     
@@ -280,7 +279,7 @@ while ~vr.experimentEnded
         catch %#ok<CTCH>
             numInputs = 2;
         end
-        if numInputs == 2
+        if numInputs == 2%note: this is a little hacky/preliminary, but functional
             vertexArrayTransformed = vr.exper.transformationFunction(vertexArray, vr.numPerspectives, vr.windows(: ,3)./vr.windows(: ,4));%, vr);
         else
             vertexArrayTransformed = vr.exper.transformationFunction(vertexArray);
