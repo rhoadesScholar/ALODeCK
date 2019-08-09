@@ -32,8 +32,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         // check if point is visible and if not, clip the point
         if (coord3[3*index + 1] <= 0) {
             coord3new[3*index+2] = 0; // invisible (clipping needed)
-            xSign = (coord3[3*index] > 0) ? 1 : -1;
-            zSign = (coord3[3*index + 2] > 0) ? 1 : -1;
+            xSign = (coord3[3*index] >= 0) ? 1 : -1;
+            zSign = (coord3[3*index + 2] >= 0) ? 1 : -1;
             // here is the clipping
             coord3new[3*index] = p * xSign * aspectRatios[window];
             coord3new[3*index+1] = p * zSign;

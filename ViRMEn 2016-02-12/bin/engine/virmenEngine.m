@@ -121,11 +121,12 @@ try
     out = fgetl(vr.controller);
     while ~contains(out, 'array')
         out = fgetl(vr.controller)
+        pause(.1)
     end
     try
         vr.missedBeatLimit = vr.exper.variables.missedBeatLimit;
     catch
-        vr.missedBeatLimit = 240;
+        vr.missedBeatLimit = 30;
     end
 catch
     disp('No controller found.');
@@ -163,15 +164,25 @@ while ~vr.experimentEnded
             vr.missedBeats = vr.missedBeats + missedBeat;
             if vr.missedBeats >= vr.missedBeatLimit
                 try
-                    fprintf(vr.controller, "\x03\x04");
-                    fclose(vr.controller);
-                    delete(vr.controller);
-                    vr.controller = serial(vr.exper.variables.comPort);
-                    fopen(vr.controller);
-                    vr.controller.ReadAsyncMode = 'continuous';
+%                     fwrite(vr.controller, "\\x03\\x04");
+%                     fclose(vr.controller);
+%                     delete(vr.controller);
+                    pause(3)
+%                     vr.controller = serial(vr.exper.variables.comPort);
+%                     fopen(vr.controller);
+%                     vr.controller.ReadAsyncMode = 'continuous';
                     out = fgetl(vr.controller);
-                    while ~contains(out, 'array')
+                    tic
+                    while ~contains(out, 'array') && toc < 3
                         out = fgetl(vr.controller)
+                    end
+                    if isempty(out)
+                        vr.experimentEnded = true;
+                        break
+                    elseif ~contains(out, 'array')
+                        while ~contains(out, 'array')
+                            out = fgetl(vr.controller)
+                        end
                     end
                 catch
                     disp('No controller found.');
@@ -257,8 +268,7 @@ while ~vr.experimentEnded
     % Update position
     vr.position = vr.position+vr.dp;
     
-    % Translate+rotate coordinates and calculate distances from animal
-    
+    % Translate+rotate coordinates and calculate distances from animal    
     [vertexArray, distance] = virmenProcessCoordinates(vr.worlds{oldWorld}.surface.vertices, vr.position, vr.numPerspectives);
 %     [vertexArray, distance] = virmenProcessCoordinatesOld(vr.worlds{oldWorld}.surface.vertices, vr.position);
     
@@ -269,7 +279,7 @@ while ~vr.experimentEnded
         catch %#ok<CTCH>
             numInputs = 2;
         end
-        if numInputs == 2
+        if numInputs == 2%note: this is a little hacky/preliminary, but functional
             vertexArrayTransformed = vr.exper.transformationFunction(vertexArray, vr.numPerspectives, vr.windows(: ,3)./vr.windows(: ,4));%, vr);
         else
             vertexArrayTransformed = vr.exper.transformationFunction(vertexArray);

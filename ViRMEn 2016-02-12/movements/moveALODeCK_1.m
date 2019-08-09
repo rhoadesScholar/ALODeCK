@@ -1,5 +1,5 @@
 function velocity = moveALODeCK_1(vr)
-    leadingText = 'array(''d'', ';
+    type = 'velocity';
     velocity = [0 0 0 0];
     invertX = 1;%SET TO 1 to uninvert
     invertY = -1;%SET TO 1 to uninvert
@@ -8,15 +8,17 @@ function velocity = moveALODeCK_1(vr)
         vr.scaling = [30 30];
     end
     
-    if vr.controller.BytesAvailable > 0
-        out = fgetl(vr.controller);
+    if vr.controller.BytesAvailable == 0
+        missedBeat = 1
+    else
+%         while vr.controller.BytesAvailable > 1
+        [out, m] = split(sprintf('%c', fread(vr.controller, [vr.controller.InputBufferSize, 1], 'char')), {'[', ']'});
+%         end
+        out = str2num(out{find(strcmp(m, ']'), 1, 'last')});
+        missedBeat = 0;
     end
-    
-    if exist('out', 'var') && ~isempty(out)
-        out = str2num(erase(out(strfind(out, leadingText):end-2), leadingText));
-    end
-    if ~exist('out', 'var') || isempty(out)
-        out = [0, 0]
+    if ~exist('out', 'var') || isempty(out) || ~isnumeric(out) || length(out) < 6
+        out = [0, 0, 0, 0, 0, 0];
     end
     
     velocity(1) = out(1)*vr.scaling(1)*invertX;

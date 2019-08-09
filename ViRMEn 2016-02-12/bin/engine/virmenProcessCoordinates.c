@@ -37,7 +37,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                 coord3new[offset + 3*index] = temp;
             }
         }
-        pos[3] = pos[3] + (2*3.1416)/perspNum; //rotate perspective
+        pos[3] += (2*M_PI)/perspNum; //rotate perspective
     }
     return;
 }
