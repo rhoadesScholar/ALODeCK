@@ -10,12 +10,14 @@ function states = pedestalPlay(varargin)
         'thisState.thisElapsed(end) >= env.transTime'};
     
     %% initialize
-    env = struct('timeElapsed', 0, 'totalCount', 0, 'startPed', 1, 'port', 'COM7', 'readWait', 1, 'minCount', 10);
+    env = struct('timeElapsed', 0, 'totalCount', 0, 'startPed', 1, ...
+        'port', 'COM7', 'readWait', 1, 'minCount', 10, 'ended', false);
     for v = 1:2:nargin
         eval(sprintf('env.%s = %s', varargin{v}, varargin{v+1}));
     end
     thisState = struct('trial', 1, 'timeElapsed', 0, 'totalCount', 0, ...
         'thisElapsed', 0, 'event', 'startRun', 'ped1Count', 0, 'ped2Count', 0);
+    env = makePlot(thisState, env);
     
     try
         env.controller = serial(env.port);
@@ -28,7 +30,7 @@ function states = pedestalPlay(varargin)
     end
     env.controller.ReadAsyncMode = 'continuous';
     env.controller.Timeout = env.readWait;
-    fig = figure;
+    
     %% start run
     allT = tic;
     while ~isEnd(thisState, endConditions, env)
@@ -49,12 +51,18 @@ function states = pedestalPlay(varargin)
                    thisState.ped2Count(end+1) = thisState.ped2Count(end);
                    if mod(thisState.trial + env.startPed, 2) == 0
                        beep
+                       env.PrefPlot.UserData(1) = env.PrefPlot.UserData(1) + 1;
+                   else
+                       env.PrefPlot.UserData(2) = env.PrefPlot.UserData(2) + 1;
                    end
                elseif contains(outString, 'ped2')
                    thisState.ped2Count(end+1) = thisState.ped2Count(end) + 1;
                    thisState.ped1Count(end+1) = thisState.ped1Count(end);
                    if mod(thisState.trial + env.startPed, 2) ~= 0
                        beep
+                       env.PrefPlot.UserData(1) = env.PrefPlot.UserData(1) + 1;
+                   else
+                       env.PrefPlot.UserData(2) = env.PrefPlot.UserData(2) + 1;
                    end
                end               
            else
@@ -64,18 +72,20 @@ function states = pedestalPlay(varargin)
            end
            beep off
            env.timeElapsed = toc(allT);
+           thisState.timeElapsed(end+1) = toc(allT);
+           thisState.thisElapsed(end+1) = toc(trialT);     
            try
                thisState.event{end+1} = strip(outString);
            catch
                thisState.event = {thisState.event, strip(outString)};
            end
-           thisState.timeElapsed(end+1) = toc(allT);
-           thisState.thisElapsed(end+1) = toc(trialT);           
+           env = updatePlot(thisState, env);
+%             refreshdata
        end
        if ~exist('states', 'var')
-           states = thisState;
+           env.states = thisState;
        else
-           states = [states thisState];
+           env.states = [env.states thisState];
        end
        oldState = thisState;
        thisState = struct('trial', oldState.trial+1, 'timeElapsed', toc(allT), ...
@@ -83,13 +93,40 @@ function states = pedestalPlay(varargin)
            'ped1Count', 0, 'ped2Count', 0);
        clear oldState;
     end
-    
+    states = env.states;
     fclose(instrfind);
     delete(instrfind);
 end
 
+function env = makePlot(thisState, env)
+    env.fig = figure;
+    subplot(2,1,1)
+    env.PrefPlot = plot(0,'LineWidth', 3, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
+    env.PrefPlot.UserData = [0 0];
+    subplot(2,1,2)
+    env.thisPedBar = bar([0 0; 0 0]);
+    xticklabels({['trig=' num2str(env.startPed)], ['trig=' num2str(mod(env.startPed,2)+1)]});
+    return
+end
+
+function env = updatePlot(thisState, env)
+    try
+        env.PrefPlot.YData(end+1) = (env.PrefPlot.UserData(1)/sum(env.PrefPlot.UserData)) - .5;
+        if length(env.PrefPlot.MarkerIndices) > thisState.trial
+           env.PrefPlot.MarkerIndices = [env.PrefPlot.MarkerIndices(1:thisState.trial-1), env.PrefPlot.XData(end)];
+        end
+        env.PrefPlot.MarkerIndices(thisState.trial) = env.PrefPlot.XData(end);
+        env.thisPedBar(1).YData(thisState.trial) = max(thisState.ped1Count(:));
+        env.thisPedBar(2).YData(thisState.trial) = max(thisState.ped2Count(:));
+        drawnow
+    catch
+        env.ended = true;
+    end
+    return
+end
+
 function isEnd = isEnd(thisState, endConditions, env)
-    isEnd = false;    
+    isEnd = false || env.ended;    
     for e = 1:length(endConditions)
         try
             eval(sprintf('isEnd = isEnd || (%s);', endConditions{e}));
