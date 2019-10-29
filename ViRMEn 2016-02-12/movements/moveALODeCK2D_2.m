@@ -4,12 +4,15 @@ function [velocity, type, missedBeat] = moveALODeCK2D_2(vr)
     velocity = [0 0 0 0];
     invertX = 1;%SET TO 1 to uninvert
     invertY = -1;%SET TO 1 to uninvert
-    
+
     if ~isfield(vr,'scaling')
         vr.scaling = [30 30];
     end
-    
-    if vr.controller.BytesAvailable == 0
+
+    if vr.controller.BytesAvailable > 0
+        out = fgetl(vr.controller);
+        missedBeat = 0;
+    else
         missedBeat = 1
     else
         while vr.controller.BytesAvailable > 1
@@ -17,7 +20,7 @@ function [velocity, type, missedBeat] = moveALODeCK2D_2(vr)
             missedBeat = 0;
         end
     end
-    
+
     if exist('out', 'var') && ~isempty(out)
         out = str2num(erase(out(strfind(out, leadingText):end-2), leadingText));
     end
