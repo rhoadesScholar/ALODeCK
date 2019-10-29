@@ -163,21 +163,22 @@ while ~vr.experimentEnded
             [vr.movement, vr.movementType, missedBeat] = vr.exper.movementFunction(vr);
             vr.missedBeats = vr.missedBeats + missedBeat;
             if vr.missedBeats >= vr.missedBeatLimit
+                disp('Resetting controller...');
                 try
 %                     fwrite(vr.controller, "\\x03\\x04");
-%                     fclose(vr.controller);
-%                     delete(vr.controller);
-                    pause(3)
-%                     vr.controller = serial(vr.exper.variables.comPort);
-%                     fopen(vr.controller);
-%                     vr.controller.ReadAsyncMode = 'continuous';
-                    out = fgetl(vr.controller);
+                    fclose(vr.controller)
+                    delete(vr.controller)
+                    pause(5)
+                    vr.controller = serial(vr.exper.variables.comPort)
+                    fopen(vr.controller)
+                    vr.controller.ReadAsyncMode = 'continuous'
+                    out = fgetl(vr.controller)
                     tic
                     while ~contains(out, 'array') && toc < 3
                         out = fgetl(vr.controller)
                     end
                     if isempty(out)
-                        vr.experimentEnded = true;
+                        vr.experimentEnded = true
                         break
                     elseif ~contains(out, 'array')
                         while ~contains(out, 'array')
@@ -194,6 +195,7 @@ while ~vr.experimentEnded
             [vr.movement, vr.movementType] = vr.exper.movementFunction(vr);
         end
     catch ME
+        vr.code.termination(vr);
         drawnow;
         virmenOpenGLRoutines(2);
         err = struct;
@@ -229,6 +231,7 @@ while ~vr.experimentEnded
     try
         vr = vr.code.runtime(vr);
     catch ME
+        vr.code.termination(vr);
         drawnow;
         virmenOpenGLRoutines(2);
         err = struct;
@@ -463,7 +466,7 @@ catch ME
 end
 
 if ~isempty(vr.controller)
-    fclose(vr.controller)
+    fclose(vr.controller);
     delete(vr.controller)
 end
 % Close the window used by ViRMEn

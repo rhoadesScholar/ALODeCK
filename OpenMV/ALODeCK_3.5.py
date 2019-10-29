@@ -152,8 +152,8 @@ while(True):
                     #img.draw_keypoints([(blob.cx(), blob.cy(), int(math.degrees(blob.rotation())))], size=20)
 
             if maxButt*maxHead > 0:
-                #img.draw_string(butt.x() + 2, butt.y() + 2, "butt")
-                #img.draw_string(head.x() + 2, head.y() + 2, "head")
+                img.draw_string(butt.x() + 2, butt.y() + 2, "butt")
+                img.draw_string(head.x() + 2, head.y() + 2, "head")
 
                 headV = [head.cxf() - ring.x(), head.cyf() - ring.y()]
                 headMag = math.sqrt(sum([math.pow(v, 2) for v in headV]))
@@ -165,7 +165,10 @@ while(True):
                 #img.draw_line(butt.cx(), butt.cy(), butt.cx() - round(buttV[0]), butt.cy() - round(buttV[1]), color = (0, 50, 50), thickness = 3)
 
                 if headMagO*1.05 > buttMagO:
-                    headTheta = math.atan(headV[1]/headV[0])
+                    try:
+                        headTheta = math.atan(headV[1]/headV[0])
+                    except:
+                        headTheta = math.atan(headV[1]/0.0001)#CATCH ZEROdIVISION ERROR
                     headVO = [math.copysign(headMagO*math.cos(headTheta), headV[0]), math.copysign(headMagO*math.sin(headTheta), headV[1])]
                     #img.draw_line(head.cx(), head.cy(), head.cx() - round(headV[0]), head.cy() - round(headV[1]), color = (50, 50, 0), thickness = 3)
                     bodyV = [head.cxf() - butt.cxf(), head.cyf() - butt.cyf()]

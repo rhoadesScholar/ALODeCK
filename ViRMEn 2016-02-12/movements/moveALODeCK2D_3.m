@@ -8,7 +8,12 @@ function [velocity, type, missedBeat] = moveALODeCK2D_3(vr)
         vr.scaling = [30 30];
     end
     
-    if vr.controller.BytesAvailable == 0
+    try 
+        byteAvail = vr.controller.BytesAvailable;
+    catch
+        vr = getController(vr);
+    end
+    if byteAvail == 0
         missedBeat = 1
     else
 %         while vr.controller.BytesAvailable > 1
@@ -29,4 +34,37 @@ function [velocity, type, missedBeat] = moveALODeCK2D_3(vr)
         velocity(2) = out(4)*vr.scaling(2)*invertY;
     end
 
+end
+
+function vr = getController(vr)
+    disp('Resetting controller...');
+    try
+        fclose(vr.controller)
+        delete(vr.controller)
+        pause(5)
+        vr.controller = serial(vr.exper.variables.comPort)
+        fopen(vr.controller)
+        vr.controller.ReadAsyncMode = 'continuous'
+        out = fgetl(vr.controller)
+        tic
+        while ~contains(out, 'array') && toc < 3
+            out = fgetl(vr.controller)
+        end
+        if isempty(out)
+            vr.experimentEnded = true
+            vr.code.termination(vr);
+            evalin('caller', 'return');
+        elseif ~contains(out, 'array')
+            while ~contains(out, 'array')
+                out = fgetl(vr.controller)
+            end
+        end
+    catch
+        disp('No controller found.');
+        vr.controller = {};
+        vr.experimentEnded = true
+        vr.code.termination(vr);
+        evalin('caller', 'return');
+    end
+    vr.missedBeats = 0;
 end
