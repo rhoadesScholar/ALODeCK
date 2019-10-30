@@ -11,7 +11,7 @@ function states = pedestalPlay(varargin)
     
     %% initialize
     env = struct('timeElapsed', 0, 'totalCount', 0, 'startPed', 1, ...
-        'port', 'COM7', 'readWait', 1, 'minCount', 10, 'ended', false);
+        'port', 'COM7', 'readWait', 1, 'minCount', 30, 'ended', false);
     for v = 1:2:nargin
         eval(sprintf('env.%s = %s', varargin{v}, varargin{v+1}));
     end
@@ -100,24 +100,64 @@ end
 
 function env = makePlot(thisState, env)
     env.fig = figure;
-    subplot(2,1,1)
+    subplot(2,2,1:2)
     env.PrefPlot = plot(0,'LineWidth', 3, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
     env.PrefPlot.UserData = [0 0];
-    subplot(2,1,2)
+    xlabel('Time (s)')
+    ylabel('Preference Ratio (TrCount/Total)')
+    
+    subplot(2,2,3)
     env.thisPedBar = bar([0 0; 0 0]);
     xticklabels({['trig=' num2str(env.startPed)], ['trig=' num2str(mod(env.startPed,2)+1)]});
+    xlabel('(sequential trials)')
+    ylabel('Event Count')
+    legend({'Pedestal 1', 'Pedestal 2'})
+    
+    subplot(2,2,4)
+    env.thisPrefPlot = plot(0,'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
+    env.thisPrefPlot.UserData = 1;
+    xlabel('Time (s)')
+    ylabel('Preference Difference')
+    hold on
     return
 end
 
 function env = updatePlot(thisState, env)
     try
-        env.PrefPlot.YData(end+1) = (env.PrefPlot.UserData(1)/sum(env.PrefPlot.UserData)) - .5;
+        env.PrefPlot.XData(end+1) = env.timeElapsed;
+        env.PrefPlot.YData(length(env.PrefPlot.XData)) = nansum([2*(env.PrefPlot.UserData(1)/sum(env.PrefPlot.UserData)) - 1, 0]);
         if length(env.PrefPlot.MarkerIndices) > thisState.trial
-           env.PrefPlot.MarkerIndices = [env.PrefPlot.MarkerIndices(1:thisState.trial-1), env.PrefPlot.XData(end)];
+           env.PrefPlot.MarkerIndices = [env.PrefPlot.MarkerIndices(1:thisState.trial-1), length(env.PrefPlot.XData)];
         end
-        env.PrefPlot.MarkerIndices(thisState.trial) = env.PrefPlot.XData(end);
+        env.PrefPlot.MarkerIndices(thisState.trial) = length(env.PrefPlot.XData);
+        if  contains(thisState.event{end}, 'on')
+            env.PrefPlot.Color = 'g';
+        elseif contains(thisState.event{end}, 'off')
+            env.PrefPlot.Color = 'b';
+        end
+        subplot(2,2,1:2)
+        if length(env.PrefPlot.XData) > 1800
+            xlim([(env.PrefPlot.XData(end)-1800) (env.PrefPlot.XData(end)+30)]);
+            ylim([min(env.PrefPlot.YData(end-1800:end)) max(env.PrefPlot.YData(end-1800:end))]);
+        end
+        
         env.thisPedBar(1).YData(thisState.trial) = max(thisState.ped1Count(:));
         env.thisPedBar(2).YData(thisState.trial) = max(thisState.ped2Count(:));
+        
+        if env.thisPrefPlot.UserData ~= thisState.trial
+            subplot(2,2,4)
+            env.thisPrefPlot = plot(0,'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
+            env.thisPrefPlot.UserData = thisState.trial;
+            xlabel('Time (s)')
+            ylabel('Preference Diff.')
+            hold on
+        else
+            countInds = [(1+mod(thisState.trial + env.startPed, 2)), (1+mod(thisState.trial + env.startPed+1, 2))];
+            counts = [thisState.ped1Count(end) thisState.ped2Count(end)];
+            env.thisPrefPlot.XData(end+1) = thisState.thisElapsed(end);
+            env.thisPrefPlot.YData(length(env.thisPrefPlot.XData)) = counts(countInds(1)) - counts(countInds(2));
+            env.thisPrefPlot.MarkerIndices = length(env.thisPrefPlot.XData);
+        end
         drawnow
     catch
         env.ended = true;
