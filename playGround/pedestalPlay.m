@@ -1,4 +1,4 @@
-function states = pedestalPlay(varargin)
+function env = pedestalPlay(varargin)
     %% settings
     evalin('base', 'beep off');
     beep off
@@ -93,7 +93,7 @@ function states = pedestalPlay(varargin)
            'ped1Count', 0, 'ped2Count', 0);
        clear oldState;
     end
-    states = env.states;
+    env.states;
     fclose(instrfind);
     delete(instrfind);
 end
