@@ -145,6 +145,7 @@ function env = updatePlot(thisState, env)
         env.thisPedBar(2).YData(thisState.trial) = max(thisState.ped2Count(:));
         
         if env.thisPrefPlot.UserData ~= thisState.trial
+            env.thisPrefPlot.MarkerIndices = [];
             subplot(2,2,4)
             env.thisPrefPlot = plot(0,'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
             env.thisPrefPlot.UserData = thisState.trial;
