@@ -93,8 +93,7 @@ function [env, fig] = pedestalPlay(varargin)
            'ped1Count', 0, 'ped2Count', 0);
        clear oldState;
     end
-    fig = env.fig;
-    env = rmfield(env, 'fig');
+    env.states;
     fclose(instrfind);
     delete(instrfind);
 end
