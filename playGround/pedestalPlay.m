@@ -96,12 +96,13 @@ function [env, fig] = pedestalPlay(varargin)
 end
 
 function env = makePlot(thisState, env)
-    env.fig = figure;
+    env.fig = figure('WindowState', 'fullscreen', 'Color', 'none', 'MenuBar', 'none');
     subplot(2,2,1:2)
     env.PrefPlot = plot(0,'LineWidth', 3, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
     env.PrefPlot.UserData = [0 0];
     xlabel('Time (s)')
     ylabel('Preference Ratio (TrCount/Total)')
+    set(gca, 'Color', [.01 .01 .01]);
     
     subplot(2,2,3)
     env.thisPedBar = bar([0 0; 0 0]);
@@ -109,12 +110,14 @@ function env = makePlot(thisState, env)
     xlabel('(sequential trials)')
     ylabel('Event Count')
     legend({'Pedestal 1', 'Pedestal 2'})
+    set(gca, 'Color', [.01 .01 .01]);
     
     subplot(2,2,4)
     env.thisPrefPlot = plot(0,'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
     env.thisPrefPlot.UserData = 1;
     xlabel('Time (s)')
     ylabel('Preference Difference')
+    set(gca, 'Color', [.01 .01 .01]);
     hold on
     return
 end
