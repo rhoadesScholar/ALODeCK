@@ -1,7 +1,5 @@
 function [env, fig] = pedestalPlay(varargin)
     %% settings
-    evalin('base', 'beep off');
-    beep off
     endConditions = {'env.timeElapsed >= env.timeOut', ...
                     'env.totalCount >= env.maxCount', 'thisState.trial > env.maxTrials'};
     transitionConditions = ...
@@ -43,7 +41,6 @@ function [env, fig] = pedestalPlay(varargin)
                 outString = fgetl(env.controller)%get input
            end
            if ~isempty(outString) && contains(outString, 'on')
-               beep on
                thisState.totalCount(end+1) = thisState.totalCount(end) + 1;
                env.totalCount = env.totalCount + 1;
                if contains(outString, 'ped1')
@@ -70,7 +67,6 @@ function [env, fig] = pedestalPlay(varargin)
                thisState.ped1Count(end+1) = thisState.ped1Count(end);
                thisState.ped2Count(end+1) = thisState.ped2Count(end);
            end
-           beep off
            env.timeElapsed = toc(allT);
            thisState.timeElapsed(end+1) = toc(allT);
            thisState.thisElapsed(end+1) = toc(trialT);     
