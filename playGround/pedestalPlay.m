@@ -96,36 +96,51 @@ function [env, fig] = pedestalPlay(varargin)
 end
 
 function env = makePlot(thisState, env)
-    env.fig = figure('WindowState', 'fullscreen', 'Color', 'none', 'MenuBar', 'none');
-    subplot(2,2,1:2)
-    env.PrefPlot = plot(0,'LineWidth', 3, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
+    env.fig = figure('WindowState', 'maximized', 'Color', 'none', 'MenuBar', 'none');
+    env.PrefAx = subplot(2,2,1:2);
+    env.PrefPlot = plot(0, 0, 'LineWidth', 3, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
     env.PrefPlot.UserData = [0 0];
     xlabel('Time (s)')
     ylabel('Preference Ratio (TrCount/Total)')
     set(gca, 'Color', [.01 .01 .01]);
+    set(gca, 'XColor', 'w');
+    set(gca, 'YColor', 'w');
+    set(gca, 'GridColor', 'w');
+    ylim([-1 1]);
+    grid on
     
-    subplot(2,2,3)
+    env.PedBarAx = subplot(2,2,3);
     env.thisPedBar = bar([0 0; 0 0]);
     xticklabels({['trig=' num2str(env.startPed)], ['trig=' num2str(mod(env.startPed,2)+1)]});
     xlabel('(sequential trials)')
     ylabel('Event Count')
     legend({'Pedestal 1', 'Pedestal 2'})
     set(gca, 'Color', [.01 .01 .01]);
+    set(gca, 'XColor', 'w');
+    set(gca, 'YColor', 'w');
+    set(gca, 'GridColor', 'w');
+    grid on
     
-    subplot(2,2,4)
-    env.thisPrefPlot = plot(0,'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
+    env.thisPrefAx = subplot(2,2,4);
+    env.thisPrefPlot = plot(0, 0, 'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
     env.thisPrefPlot.UserData = 1;
     xlabel('Time (s)')
-    ylabel('Preference Difference')
+    ylabel('Preference Diff.')
     set(gca, 'Color', [.01 .01 .01]);
+    set(gca, 'XColor', 'w');
+    set(gca, 'YColor', 'w');
+    set(gca, 'GridColor', 'w');
+    grid on
     hold on
+    
+    drawnow
     return
 end
 
 function env = updatePlot(thisState, env)
     try
         env.PrefPlot.XData(end+1) = env.timeElapsed;
-        env.PrefPlot.YData(length(env.PrefPlot.XData)) = nansum([2*(env.PrefPlot.UserData(1)/sum(env.PrefPlot.UserData)) - 1, 0]);
+        env.PrefPlot.YData(length(env.PrefPlot.XData)) = nansum([2*(env.PrefPlot.UserData(1)/nansum(env.PrefPlot.UserData)) - 1, 0]);
         if length(env.PrefPlot.MarkerIndices) > thisState.trial
            env.PrefPlot.MarkerIndices = [env.PrefPlot.MarkerIndices(1:thisState.trial-1), length(env.PrefPlot.XData)];
         end
@@ -138,7 +153,7 @@ function env = updatePlot(thisState, env)
         subplot(2,2,1:2)
         if length(env.PrefPlot.XData) > 1800
             xlim([(env.PrefPlot.XData(end)-1800) (env.PrefPlot.XData(end)+30)]);
-            ylim([min(env.PrefPlot.YData(end-1800:end)) max(env.PrefPlot.YData(end-1800:end))]);
+%             ylim([min(env.PrefPlot.YData(end-1800:end)) max(env.PrefPlot.YData(end-1800:end))]);
         end
         
         env.thisPedBar(1).YData(thisState.trial) = max(thisState.ped1Count(:));
@@ -158,10 +173,13 @@ function env = updatePlot(thisState, env)
             env.thisPrefPlot.XData(end+1) = thisState.thisElapsed(end);
             env.thisPrefPlot.YData(length(env.thisPrefPlot.XData)) = counts(countInds(1)) - counts(countInds(2));
             env.thisPrefPlot.MarkerIndices = length(env.thisPrefPlot.XData);
+            env.thisPrefAx.YLim = [-max(abs(env.thisPrefAx.YLim)) max(abs(env.thisPrefAx.YLim))];
         end
         drawnow
     catch
-        env.ended = true;
+        if ~isvalid(env.fig)
+            env.ended = true;
+        end
     end
     return
 end

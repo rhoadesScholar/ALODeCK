@@ -32,6 +32,7 @@ function dataFile = pedestalLongRun(experimentEndConditions, experimentSettings,
     runName = inputdlg('Enter run specifiers separated by commas (ex: mouseName, probabilityTest):');
     fileName = genvarname([datestr(date,'yyyymmdd') '_' replace(strip(runName{:}),',', '_')]);
     dataFile = matfile([destPath filesep fileName '.mat'],'Writable',true);
+    mkdir([destPath filesep fileName '_figs'])
     
     %% start experiment
     experimentT = tic;
@@ -65,7 +66,7 @@ function dataFile = pedestalLongRun(experimentEndConditions, experimentSettings,
        end
        runName = ['run' num2str(runNum) '_' datestr(datetime, 'yyyymmdd_HHMM')];
        dataFile.(runName) = env;
-       savefig(fig, runName);
+       savefig(fig, [destPath filesep fileName '_figs' filesep runName]);
        pause(interRunPause - toc)
        runNum = runNum + 1;
        if exist('runSubsequentNum', 'var') && mod(runNum, runSubsequentNum) == 0
