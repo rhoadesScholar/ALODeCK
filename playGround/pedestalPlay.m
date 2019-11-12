@@ -139,6 +139,7 @@ end
 
 function env = updatePlot(thisState, env)
     try
+        figure(env.fig);
         env.PrefPlot.XData(end+1) = env.timeElapsed;
         env.PrefPlot.YData(length(env.PrefPlot.XData)) = nansum([2*(env.PrefPlot.UserData(1)/nansum(env.PrefPlot.UserData)) - 1, 0]);
         if length(env.PrefPlot.MarkerIndices) > thisState.trial
@@ -173,7 +174,8 @@ function env = updatePlot(thisState, env)
             env.thisPrefPlot.XData(end+1) = thisState.thisElapsed(end);
             env.thisPrefPlot.YData(length(env.thisPrefPlot.XData)) = counts(countInds(1)) - counts(countInds(2));
             env.thisPrefPlot.MarkerIndices = length(env.thisPrefPlot.XData);
-            env.thisPrefAx.YLim = [-max(abs(env.thisPrefAx.YLim)) max(abs(env.thisPrefAx.YLim))];
+            env.thisPrefAx.YLim = [-max(abs([env.thisPrefAx.YLim env.thisPrefPlot.YData]))...
+                max(abs([env.thisPrefAx.YLim env.thisPrefPlot.YData]))];
         end
         drawnow
     catch
