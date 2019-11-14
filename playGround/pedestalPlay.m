@@ -13,8 +13,9 @@ function [env, fig] = pedestalPlay(varargin)
     for v = 1:2:nargin
         eval(sprintf('env.%s = %s', varargin{v}, varargin{v+1}));
     end
-    thisState = struct('startTime', datestr(datetime, 'yyyymmdd_HHMMSSFFF'), 'trial', 1, 'timeElapsed', 0, 'totalCount', 0, ...
-        'thisElapsed', 0, 'event', 'startRun', 'ped1Count', 0, 'ped2Count', 0);
+    thisState = struct('startTime', datestr(now, 'yyyymmdd_HHMMSSFFF'), 'trial', 1, 'timeElapsed', 0, ...
+        'totalCount', 0, 'thisElapsed', 0, 'event', 'startRun', 'ped1Count', 0, 'ped2Count', 0, ...
+        'triggerCount', 0, 'timeStamp', datestr(now, 'yyyymmdd_HHMMSSFFF'));
     env = makePlot(thisState, env);
     
     try
@@ -48,6 +49,7 @@ function [env, fig] = pedestalPlay(varargin)
                    thisState.ped2Count(end+1) = thisState.ped2Count(end);
                    if mod(thisState.trial + env.startPed, 2) == 0
                        beep
+                       thisState.triggerCount(end+1) = thisState.triggerCount(end) + 1;
                        env.PrefPlot.UserData(1) = env.PrefPlot.UserData(1) + 1;
                    else
                        env.PrefPlot.UserData(2) = env.PrefPlot.UserData(2) + 1;
@@ -57,6 +59,7 @@ function [env, fig] = pedestalPlay(varargin)
                    thisState.ped1Count(end+1) = thisState.ped1Count(end);
                    if mod(thisState.trial + env.startPed, 2) ~= 0
                        beep
+                       thisState.triggerCount(end+1) = thisState.triggerCount(end) + 1;
                        env.PrefPlot.UserData(1) = env.PrefPlot.UserData(1) + 1;
                    else
                        env.PrefPlot.UserData(2) = env.PrefPlot.UserData(2) + 1;
@@ -64,12 +67,14 @@ function [env, fig] = pedestalPlay(varargin)
                end               
            else
                thisState.totalCount(end+1) = thisState.totalCount(end);
+               thisState.triggerCount(end+1) = thisState.triggerCount(end);
                thisState.ped1Count(end+1) = thisState.ped1Count(end);
                thisState.ped2Count(end+1) = thisState.ped2Count(end);
            end
            env.timeElapsed = toc(allT);
            thisState.timeElapsed(end+1) = toc(allT);
-           thisState.thisElapsed(end+1) = toc(trialT);     
+           thisState.thisElapsed(end+1) = toc(trialT);    
+           thisState.timeStamp(end+1) = datestr(now, 'yyyymmdd_HHMMSSFFF');
            try
                thisState.event{end+1} = strip(outString);
            catch
@@ -78,15 +83,15 @@ function [env, fig] = pedestalPlay(varargin)
            env = updatePlot(thisState, env);
 %             refreshdata
        end
-       if ~exist('states', 'var')
+       if ~isfield(env, 'states')
            env.states = thisState;
        else
            env.states = [env.states thisState];
        end
        oldState = thisState;
-       thisState = struct('startTime', datestr(datetime, 'yyyymmdd_HHMMSSFFF'), 'trial', oldState.trial+1, 'timeElapsed', toc(allT), ...
-           'totalCount', oldState.totalCount, 'thisElapsed', 0, 'event', 'startTrial', ...
-           'ped1Count', 0, 'ped2Count', 0);
+       thisState = struct('startTime', datestr(now, 'yyyymmdd_HHMMSSFFF'), 'trial', oldState.trial+1, ...
+           'timeElapsed', toc(allT), 'totalCount', oldState.totalCount, 'thisElapsed', 0, 'event', 'startTrial',...
+           'ped1Count', 0, 'ped2Count', 0, 'triggerCount', 0, 'timeStamp', datestr(now, 'yyyymmdd_HHMMSSFFF'));
        clear oldState;
     end
     fig = env.fig;
@@ -163,7 +168,7 @@ function env = updatePlot(thisState, env)
         if env.thisPrefPlot.UserData ~= thisState.trial
             env.thisPrefPlot.MarkerIndices = [];
             subplot(2,2,4)
-            env.thisPrefPlot = plot(0,'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
+            env.thisPrefPlot = plot(0, 0,'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
             env.thisPrefPlot.UserData = thisState.trial;
             xlabel('Time (s)')
             ylabel('Preference Diff.')

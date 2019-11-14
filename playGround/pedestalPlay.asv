@@ -13,7 +13,7 @@ function [env, fig] = pedestalPlay(varargin)
     for v = 1:2:nargin
         eval(sprintf('env.%s = %s', varargin{v}, varargin{v+1}));
     end
-    thisState = struct('startTime', datestr(datetime, 'yyyymmdd_HHMMSSFFF'), 'trial', 1, 'timeElapsed', 0, 'totalCount', 0, ...
+    thisState = struct('startTime', datestr(now, 'yyyymmdd_HHMMSSFFF'), 'trial', 1, 'timeElapsed', 0, 'totalCount', 0, ...
         'thisElapsed', 0, 'event', 'startRun', 'ped1Count', 0, 'ped2Count', 0);
     env = makePlot(thisState, env);
     
@@ -84,9 +84,9 @@ function [env, fig] = pedestalPlay(varargin)
            env.states = [env.states thisState];
        end
        oldState = thisState;
-       thisState = struct('startTime', datestr(datetime, 'yyyymmdd_HHMMSSFFF'), 'trial', oldState.trial+1, 'timeElapsed', toc(allT), ...
+       thisState = struct('startTime', datestr(now, 'yyyymmdd_HHMMSSFFF'), 'trial', oldState.trial+1, 'timeElapsed', toc(allT), ...
            'totalCount', oldState.totalCount, 'thisElapsed', 0, 'event', 'startTrial', ...
-           'ped1Count', 0, 'ped2Count', 0);
+           'ped1Count', 0, 'ped2Count', 0, 'triggerCount', 0);
        clear oldState;
     end
     fig = env.fig;
@@ -97,8 +97,8 @@ end
 
 function env = makePlot(thisState, env)
     env.fig = figure('WindowState', 'maximized', 'Color', 'none', 'MenuBar', 'none');
-    subplot(2,2,1:2)
-    env.PrefPlot = plot(0,'LineWidth', 3, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
+    env.PrefAx = subplot(2,2,1:2);
+    env.PrefPlot = plot(0, 0, 'LineWidth', 3, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
     env.PrefPlot.UserData = [0 0];
     xlabel('Time (s)')
     ylabel('Preference Ratio (TrCount/Total)')
@@ -109,7 +109,7 @@ function env = makePlot(thisState, env)
     ylim([-1 1]);
     grid on
     
-    subplot(2,2,3)
+    env.PedBarAx = subplot(2,2,3);
     env.thisPedBar = bar([0 0; 0 0]);
     xticklabels({['trig=' num2str(env.startPed)], ['trig=' num2str(mod(env.startPed,2)+1)]});
     xlabel('(sequential trials)')
@@ -121,8 +121,8 @@ function env = makePlot(thisState, env)
     set(gca, 'GridColor', 'w');
     grid on
     
-    env.thisPrefsubplot(2,2,4)
-    env.thisPrefPlot = plot(0,'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
+    env.thisPrefAx = subplot(2,2,4);
+    env.thisPrefPlot = plot(0, 0, 'LineWidth', 1.5, 'Marker','x', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
     env.thisPrefPlot.UserData = 1;
     xlabel('Time (s)')
     ylabel('Preference Diff.')
@@ -139,6 +139,7 @@ end
 
 function env = updatePlot(thisState, env)
     try
+        figure(env.fig);
         env.PrefPlot.XData(end+1) = env.timeElapsed;
         env.PrefPlot.YData(length(env.PrefPlot.XData)) = nansum([2*(env.PrefPlot.UserData(1)/nansum(env.PrefPlot.UserData)) - 1, 0]);
         if length(env.PrefPlot.MarkerIndices) > thisState.trial
@@ -173,7 +174,8 @@ function env = updatePlot(thisState, env)
             env.thisPrefPlot.XData(end+1) = thisState.thisElapsed(end);
             env.thisPrefPlot.YData(length(env.thisPrefPlot.XData)) = counts(countInds(1)) - counts(countInds(2));
             env.thisPrefPlot.MarkerIndices = length(env.thisPrefPlot.XData);
-            env.thisPrefPlot.YLim = [-max(abs(env.thisPrefPlot.YLim)) max(abs(env.thisPrefPlot.YLim))];
+            env.thisPrefAx.YLim = [-max(abs([env.thisPrefAx.YLim env.thisPrefPlot.YData]))...
+                max(abs([env.thisPrefAx.YLim env.thisPrefPlot.YData]))];
         end
         drawnow
     catch

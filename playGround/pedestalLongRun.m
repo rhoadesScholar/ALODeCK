@@ -30,7 +30,7 @@ function dataFile = pedestalLongRun(experimentEndConditions, experimentSettings,
     cellfun(@(x) evalin('caller', x), experimentSettings);
     destPath = uigetdir('', 'Choose the destination folder for your data.');
     runName = inputdlg('Enter run specifiers separated by commas (ex: mouseName, probabilityTest):');
-    fileName = genvarname([datestr(date,'yyyymmdd') '_' replace(strip(runName{:}),',', '_')]);
+    fileName = genvarname([datestr(now,'yyyymmdd') '_' replace(strip(runName{:}),',', '_')]);
     dataFile = matfile([destPath filesep fileName '.mat'],'Writable',true);
     mkdir([destPath filesep fileName '_figs'])
     
@@ -40,7 +40,7 @@ function dataFile = pedestalLongRun(experimentEndConditions, experimentSettings,
     while ~any(cellfun(@(x) evalin('caller', x), experimentEndConditions))
        if exist('runSchedule', 'var')
            nextRun = runSchedule(mod(runNum-1, length(runSchedule)) + 1);
-           while abs(nextRun - str2double(datestr(datetime, 'HHMMSS'))) > 10
+           while abs(nextRun - str2double(datestr(now, 'HHMMSS'))) > 10
                pause(30)
            end
        end
@@ -64,9 +64,13 @@ function dataFile = pedestalLongRun(experimentEndConditions, experimentSettings,
        if exist('postRunBeep', 'var') && postRunBeep
            beep
        end
-       runName = ['run' num2str(runNum) '_' datestr(datetime, 'yyyymmdd_HHMM')];
+       runName = ['run' num2str(runNum) '_' datestr(now, 'yyyymmdd_HHMM')];
        dataFile.(runName) = env;
-       savefig(fig, [destPath filesep fileName '_figs' filesep runName]);
+       if isvalid(fig)
+           savefig(fig, [destPath filesep fileName '_figs' filesep runName]);
+       else
+           break
+       end
        pause(interRunPause - toc)
        runNum = runNum + 1;
        if exist('runSubsequentNum', 'var') && mod(runNum, runSubsequentNum) == 0
